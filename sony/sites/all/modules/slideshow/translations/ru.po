@@ -1,0 +1,200 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2007-11-17 19:17+0300\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: Ilya V. Azarov <brainstorm@brainstorm.name>\n"
+"Language-Team: Russian <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: slideshow.module:34;67 slideshow.install:10;66 slideshow.info:0
+msgid "Slideshow"
+msgstr "Слайдшоу"
+
+#: slideshow.module:38
+msgid "Change default settings for slideshows, such as the image dimensions."
+msgstr "Изменить параметры по умолчанию, такие как размеры изображения"
+
+#: slideshow.module:59
+msgid "Images"
+msgstr "Изображения"
+
+#: slideshow.module:68
+msgid "If enabled, images attached to the post are displayed in the form of a slideshow."
+msgstr "Если включено, то изображения добавленные к посту отображаются в виде слайдшоу"
+
+#: slideshow.module:70
+msgid "Disabled"
+msgstr "Отключено"
+
+#: slideshow.module:70
+msgid "Enabled"
+msgstr "Включено"
+
+#: slideshow.module:89
+msgid "not set"
+msgstr "не установлено"
+
+#: slideshow.module:94
+msgid "Default display location"
+msgstr "Расположение на дисплее по умолчанию"
+
+#: slideshow.module:95
+msgid "Select where the slideshow appears by default. If you select %above, users have to explicitly active the slideshow for each post."
+msgstr "Выберите, как слайдшоу выглядит по умолчанию. Если вы выберете %above, пользователи просто активируют слайдшоу для каждого поста."
+
+#: slideshow.module:95;98;184
+msgid "Above"
+msgstr "Сверху"
+
+#: slideshow.module:97;183
+msgid "Nowhere"
+msgstr "Нигде"
+
+#: slideshow.module:99;185
+msgid "Below"
+msgstr "Внизу"
+
+#: slideshow.module:100
+msgid "Within"
+msgstr "Во весь экран"
+
+#: slideshow.module:107
+msgid "Default alignment"
+msgstr "Выравнивание по умолчанию"
+
+#: slideshow.module:108
+msgid "Select how the slideshow box should be displayed by default."
+msgstr "Выберите как слайдшоу дожно отображаться"
+
+#: slideshow.module:110;199
+msgid "Full width"
+msgstr "На всю длину"
+
+#: slideshow.module:111;200
+msgid "Left"
+msgstr "Слева"
+
+#: slideshow.module:112;201
+msgid "Right"
+msgstr "Справа"
+
+#: slideshow.module:119
+msgid "Default image size"
+msgstr "Размер по умолчанию"
+
+#: slideshow.module:123
+msgid "The maximum size of images displayed in a slideshow. Cannot be bigger than the maximum image size for upload module (which is @maximum-size)."
+msgstr "Максимальный размер картинок, изображенных на слайдшоу. Не может быть больше размеров модуля загрузок(@maximum-size)."
+
+#: slideshow.module:124;219
+msgid "<kbd>WIDTHxHEIGHT</kbd>"
+msgstr "<kbd>Длина x Высота"
+
+#: slideshow.module:129
+msgid "Slideshow image path"
+msgstr "Путь до изображение"
+
+#: slideshow.module:131
+msgid "Private"
+msgstr "Частный"
+
+#: slideshow.module:132
+msgid "Subdirectory in the global file directory where resized images for slideshows will be stored."
+msgstr "Пдкаталог в глобальном каталоге где хранятся изображения с измененным размером."
+
+#: slideshow.module:141
+msgid "The specified default slideshow image size is invalid."
+msgstr "Указанный размер показа не верен"
+
+#: slideshow.module:153
+msgid "Slideshow images can't be created because the directory %directory has not been properly configured."
+msgstr "Изображения для показа не могут быть созданы, поскольку каталог %directory не был правильно сконфигурирован."
+
+#: slideshow.module:171
+msgid "Slideshow settings"
+msgstr "Настройки слайдшоу"
+
+#: slideshow.module:174
+msgid "Attached images are displayed in the form of a slideshow."
+msgstr "Приложенные картинки будут изображены в виде слайдшоу."
+
+#: slideshow.module:186
+msgid "Tag"
+msgstr "Тэг"
+
+#: slideshow.module:191
+msgid "Display location"
+msgstr "Расположение на экране"
+
+#: slideshow.module:192
+msgid "Select where the slideshow appears. To specify a place within the content, use <var>[slideshow]</var> and select the appropriate location here."
+msgstr "Выберите место расположения слайдшоу. Чтобы указать место в контенте, используйте <var>[slideshow]</var> и выберите правильное расположение."
+
+#: slideshow.module:193;208
+msgid "Default"
+msgstr "По умолчанию."
+
+#: slideshow.module:206
+msgid "Alignment"
+msgstr "Выравнивание"
+
+#: slideshow.module:207
+msgid "Select whether the slideshow box is displayed with full width or floated on the left or right side."
+msgstr "Выберите будет ли блок слайдшоу будет отображен в полный размер или с выравниванием по левому или по правому краю."
+
+#: slideshow.module:214
+msgid "Image size"
+msgstr "Размер изображения"
+
+#: slideshow.module:218
+msgid "The maximum size of images displayed in a slideshow. Leave blank to use the default size (<kbd>@default-size</kbd>)."
+msgstr "Максимальный размер картинок изображенных на слайдшоу. Оствьте незаполненным, чтобы использовать размер по умолчанию(<kbd>@default-size</kbd>)."
+
+#: slideshow.module:231
+msgid "The specified slideshow image size is invalid."
+msgstr "Указанные размеры изображения для слайдшоу неверны"
+
+#: slideshow.module:422
+msgid "The file %file could not be created."
+msgstr "Файл %file не может быть создан"
+
+#: slideshow.module:568
+msgid "Previous"
+msgstr "Предыдущий"
+
+#: slideshow.module:569
+msgid "Image !current of !total"
+msgstr "Изображение !current из !total"
+
+#: slideshow.module:570
+msgid "Next"
+msgstr "Следующий"
+
+#: slideshow.module:50
+msgid "configure slideshows"
+msgstr "конфигурировать слайдшоу"
+
+#: slideshow.module:0
+msgid "slideshow"
+msgstr "слайдшоу"
+
+#: slideshow.install:12;68
+msgid "Slideshows are a series of image nodes that are shown after each other. In modern browsers, the images are changed without reloading the entire page."
+msgstr "Слайдшоу - это серия изображений которые показываются одно за другим. В современных браузерах, изображения меняются без перезагрузки страницы."
+
+#: slideshow.install:87
+msgid "Added generic node type \"slideshow\"."
+msgstr "добавлен тип узла \"слайдшоу\""
+
+#: slideshow.install:130
+msgid "Updated post %title."
+msgstr "Обновлен пост %title"
+
+#: slideshow.info:0
+msgid "Displays images attachments as JavaScript enabled slideshows."
+msgstr "Отображает вложенные изображения как показ слайдов."
+

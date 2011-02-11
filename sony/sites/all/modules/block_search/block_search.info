@@ -1,0 +1,12 @@
+; $Id: block_search.info,v 1.1 2010/09/20 18:20:59 prasadshir Exp $
+name = Block search
+description = A module that can search blocks.
+core = 6.x
+package = CCK
+
+; Information added by drupal.org packaging script on 2010-09-21
+version = "6.x-1.0"
+core = "6.x"
+project = "block_search"
+datestamp = "1285038358"
+

@@ -1,0 +1,61 @@
+<?php
+// $Id: block_search.module,v 1.1 2010/09/20 18:20:59 prasadshir Exp $ 
+/**
+ * @file
+ * Allows the admin to quickly create blocks using preset HTML snippets
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function block_search_help($path, $arg) {
+
+  $output = '';
+  
+	switch ($path) {
+	
+	  case 'admin/block_search':
+        $output = '<p>Search the blocks here .</p>';
+    break;
+    	  
+  }	  
+ 
+  return $output;
+  
+}
+
+/**
+ * Implementation of hook_perm
+ */
+function block_search_perm() {
+
+	return array('add blocks', 'edit blocks', 'delete blocks','set region');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function block_search_menu() {
+
+  $items = array();
+  
+  $items['block_search'] = array(
+    'title' => 'Administer Blocks',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('block_search_admin'),
+    'access arguments' => array('admin blocks'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'block_search.admin.inc'
+  );
+  
+  $items['block_search/setregion'] = array(
+    'title' => 'Set Block Regions',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('block_search_setregion'),
+    'access arguments' => array('set region'),
+    'type' => MENU_CALLBACK,
+    'file' => 'block_search.admin.inc'
+  );  
+  return $items;
+} // function bmaker_menu
+

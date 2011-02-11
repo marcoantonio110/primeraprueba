@@ -1,0 +1,74 @@
+slideshow.module ($Id: CHANGELOG.txt,v 1.8.4.1 2009/04/05 17:38:34 timcn Exp $)
+
+* 2.1 (2009-04-05)
+  - Ported to Drupal 6
+  - Rewrote the JavaScript
+  - Preserve the title of the file when on node editing form, even if it's empty
+  - Removed the check from the scroll into view code
+  - #135350 by Shiny: Add PostgreSQL support
+  - #97117: Images do not display in secure filesystem (by evanchsa)
+  - coder.module cleanup
+  - Don't scroll to image when clicking next/prev
+  - #147757 by sethcohn: Don't display next/prev buttons when there's just one image.
+  - #152261 by Todd Nienkerk: Remove stray
+  - #132213 by jshuster: Allow suppressing the slideshow in teasers
+  - #119923: resized image is not created when upload filename already exists
+  - #260648 by ardas: remove imagecache dependency
+  - #238934: slideshow rendering function by ARDAS
+
+* 2.0 (2006-12-25)
+  - Slideshow module does no longer come with its own content type
+  - Existing slideshows are converted to a generic type named 'slideshow'
+  - Any post can now contain a slideshow: Enable slideshow for a content type
+    at Administer >> Content management >> Content types >> [content type]
+  - Slideshows can now configured more extensively:
+    - The image dimensions for each individual slideshow can be set
+    - The location for each individual slideshow can be set to:
+      - Above: The slideshow appears above the content
+      - Below: The slideshow appears below the content
+      - Tag: The slideshow appears within the content at the specified position
+    - The alignment of each individual slideshow can be set:
+      - Left: The slideshow is floated on the left side
+      - Right: The slideshow is floated on the right side
+      - Full width: The slideshow is centered with no text on either side
+    - If the user doesn't specify any settings for a slideshow, the global
+      default settings are used
+  - Modified the theme function a bit to use the new #type => slideshow format
+  - Removed the transition
+  - Slideshow images now reside in their own directory
+  - Images are now deleted and/or regenerated properly on any node update
+
+
+* 1.2 (2006-12-09)
+  - Fixed an issue where multiple slideshows on a page didn't work correctly.
+
+* 1.1 (2006-11-12)
+  - Fixed #97113 (Rename slideshow to Slideshow)
+  - Fixed #83928 (Formatted image not removed when pic is deleted)
+  - Update the info file
+  - Attachment count is no longer displayed on teaser pages when it is 0
+  - theme_slideshow() no longer uses url() as it is already validated in nodeapi
+  - Image size setting is now validated properly
+  - Added a class 'slideshow' to the HTML output for easier theming
+
+* 1.0 (2006-09-14)
+	- ported the module to function with the latest HEAD version of Drupal
+	- the JavaScript does now use jQuery
+	- added an *.info file for the module description
+
+  * (2006-07-14)
+  	- made slideshow appear on the content of the "create content" page
+  	- changed the access functionality so that users without administration
+  	  privileges can add and/or edit slideshows
+  	- added an *.install file
+  	- the fieldset "File attachments" is now named "Images" and expanded by
+  	  default
+	
+  * (2006-04-26)
+  	- fixed a bug where images smaller then the maximum size weren't displayed
+
+  * (2006-04-24)
+  	- fixed a bug with PHP 4
+
+  * (2006-04-19)
+  	- initial version

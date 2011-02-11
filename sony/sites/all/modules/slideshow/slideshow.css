@@ -1,0 +1,21 @@
+/* $Id */
+
+.slideshow.align-full {
+  text-align:center;
+}
+
+.slideshow.align-right {
+  float:right;
+  margin:0.5em 0 1em 2em;
+  text-align:right;
+}
+
+.slideshow .title {
+  display:block; clear:both;
+}
+
+.slideshow.align-left {
+  float:left;
+  margin:0.5em 2em 1em 0;
+  text-align:left;
+}

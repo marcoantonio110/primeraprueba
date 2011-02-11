@@ -1,0 +1,18 @@
+$Id: readme,v 1.1 2010/09/20 18:20:59 prasadshir Exp $
+If you have a handful of custom or manually created blocks in 
+your site, administering them from core block management 
+screen is sometimes painful. If you ever wished that there should 
+be a search functionality for searching contents of custom blocks, 
+this module is for you!
+Block Search module provides an alternative way of managing 
+blocks. It provides a tabular list of blocks in a theme independent 
+page. It also provides a simple search functionality. Using this 
+functionality administrators can search blocks with matching 
+search phrases in titles or body areas. Tabular blocks list 
+contains handy edit, delete & manage regions links.
+This module does not add any tables on its own. Also it uses edit, 
+delete & set regions functionalities from Drupal core. The only 
+two most important functions this module provides are:
+1.	Ability to search custom blocks based on their content
+2.	A theme independent page for managing blocks
+

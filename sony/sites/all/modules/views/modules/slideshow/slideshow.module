@@ -1,0 +1,581 @@
+<?php
+// $Id: slideshow.module,v 1.20.2.6.2.1 2009/04/05 17:38:34 timcn Exp $
+
+/**
+ * @file
+ * slideshow.module provides basic slideshow capabilities. It transforms images
+ * attached to nodes to a JavaScript enhanced slideshow. If the user does not have
+ * JavaScript enabled, it degrades to a "regular" slideshow where the "next"
+ * link points to the next image and a whole new page is loaded.
+ */
+
+// Define constants for slideshow settings
+define('SLIDESHOW_LOCATION_DEFAULT', 0);
+define('SLIDESHOW_LOCATION_NONE', 1);
+define('SLIDESHOW_LOCATION_ABOVE', 2);
+define('SLIDESHOW_LOCATION_BELOW', 3);
+define('SLIDESHOW_LOCATION_TAG', 4);
+
+define('SLIDESHOW_ALIGN_DEFAULT', 0);
+define('SLIDESHOW_ALIGN_FULL', 1);
+define('SLIDESHOW_ALIGN_LEFT', 2);
+define('SLIDESHOW_ALIGN_RIGHT', 3);
+
+// Define constants for default values for variable_get().
+define('SLIDESHOW_DEFAULT_NODE_SETTING', FALSE);
+define('SLIDESHOW_DEFAULT_LOCATION', SLIDESHOW_LOCATION_ABOVE);
+define('SLIDESHOW_DEFAULT_ALIGN', SLIDESHOW_ALIGN_FULL);
+define('SLIDESHOW_DEFAULT_DIMENSIONS', '640x480');
+define('SLIDESHOW_DEFAULT_IMAGE_PATH', 'slideshow');
+define('SLIDESHOW_DEFAULT_SHOW_IN_TEASER', FALSE);
+
+/**
+ * Implementation of hook_menu().
+ */
+function slideshow_menu() {
+  $items = array();
+
+  $items['admin/settings/slideshow'] = array(
+    'title' => 'Slideshow',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('slideshow_admin_settings'),
+    'access arguments' => array('change slideshow default settings'),
+    'description' => 'Change default settings for slideshows, such as the image dimensions.',
+    'file' => 'slideshow.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function slideshow_perm() {
+  return array('change slideshow default settings', 'configure slideshows');
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function slideshow_theme() {
+  return array(
+    'slideshow' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function slideshow_form_node_type_form_alter(&$form, &$form_state) {
+  // Add the ability to enable/disable the slideshow for a content type
+  if (isset($form['identity']['type'])) {
+    $form['workflow']['slideshow'] = array(
+      '#type' => 'radios',
+      '#title' => t('Slideshow'),
+      '#description' => t('If enabled, images attached to the post are displayed in the form of a slideshow. <strong>Make sure to enable attachments as well for this node type.</strong>'),
+      '#default_value' => (int)variable_get('slideshow_'. $form['#node_type']->type, SLIDESHOW_DEFAULT_NODE_SETTING),
+      '#options' => array(
+        t('Disabled'),
+        t('Enabled'),
+      ),
+    );
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function slideshow_form_alter(&$form, &$form_state, $form_id) {
+  // If this is a node form...
+  if (isset($form['#id']) && $form['#id'] == 'node-form') {
+    // ... add the slideshow settings page
+    if (variable_get('slideshow_'. $form['type']['#value'], SLIDESHOW_DEFAULT_NODE_SETTING) && user_access('configure slideshows')) {
+      _slideshow_node_form($form);
+    }
+  }
+}
+
+/**
+ * Retrieve the directory where slideshow images are stored in.
+ */
+function slideshow_image_directory() {
+  $slideshow_path = file_create_path(variable_get('slideshow_image_path', SLIDESHOW_DEFAULT_IMAGE_PATH));
+
+  // Make sure that the directory exists
+  if (!file_check_directory($slideshow_path, FILE_CREATE_DIRECTORY)) {
+    drupal_set_message(t("Slideshow images can't be created because the directory %directory has not been properly configured.", array('%directory' => $slideshow_path)), 'error');
+  }
+
+  return $slideshow_path;
+}
+
+/**
+ * Helper function for hook_form_alter(). Adds form elements to node submission forms
+ */
+function _slideshow_node_form(&$form) {
+  $form['attachments']['#title'] = check_plain(t('File attachments & Slideshow images'));
+  $form['attachments']['#collapsed'] = FALSE;
+
+  $form['attachments']['slideshow'] = array(
+    '#type' => 'fieldset',
+    '#access' => user_access('attach images as slideshow'),
+    '#title' => t('Slideshow settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#description' => t('Attached images are displayed in the form of a slideshow.'),
+    '#weight' => -10,
+    '#tree' => TRUE,
+  );
+
+  // Fetch the values for the <Default: ...> select values
+  $location = variable_get('slideshow_default_location', SLIDESHOW_DEFAULT_LOCATION);
+  $options = array(
+    SLIDESHOW_LOCATION_NONE => t('Nowhere'),
+    SLIDESHOW_LOCATION_ABOVE => t('Above'),
+    SLIDESHOW_LOCATION_BELOW => t('Below'),
+    SLIDESHOW_LOCATION_TAG => t('Tag')
+  );
+
+  $form['attachments']['slideshow']['location'] = array(
+    '#type' => 'select',
+    '#title' => t('Display location'),
+    '#description' => t('Select where the slideshow appears. To specify a place within the content, use <var>[slideshow]</var> and select the appropriate location here.'),
+    '#options' => array(SLIDESHOW_LOCATION_DEFAULT => '<'. t('Default') .': '. $options[$location] .'>') + $options,
+    '#default_value' => isset($form['#node']->slideshow) ? $form['#node']->slideshow['location'] : SLIDESHOW_LOCATION_DEFAULT,
+  );
+
+  $align = variable_get('slideshow_default_align', SLIDESHOW_DEFAULT_ALIGN);
+  $options = array(
+    SLIDESHOW_ALIGN_FULL => t('Full width'),
+    SLIDESHOW_ALIGN_LEFT => t('Left'),
+    SLIDESHOW_ALIGN_RIGHT => t('Right')
+  );
+
+  $form['attachments']['slideshow']['align'] = array(
+    '#type' => 'select',
+    '#title' => t('Alignment'),
+    '#description' => t('Select whether the slideshow box is displayed with full width or floated on the left or right side.'),
+    '#options' => array(SLIDESHOW_ALIGN_DEFAULT => '<'. t('Default') .': '. $options[$align] .'>') + $options,
+    '#default_value' => isset($form['#node']->slideshow) ? $form['#node']->slideshow['align'] : SLIDESHOW_ALIGN_DEFAULT,
+  );
+
+  $form['attachments']['slideshow']['dimensions'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Image size'),
+    '#default_value' => isset($form['#node']->slideshow) ? $form['#node']->slideshow['dimensions'] : '',
+    '#size' => 20,
+    '#maxlength' => 20,
+    '#description' => t('The maximum size of images displayed in a slideshow. Leave blank to use the default size (<kbd>@default-size</kbd>).', array('@default-size' => variable_get('slideshow_default_dimensions', SLIDESHOW_DEFAULT_DIMENSIONS))),
+    '#field_suffix' => t('<kbd>WIDTHxHEIGHT</kbd>'),
+  );
+
+  if (!isset($form['#validate'])) {
+    $form['#validate'] = array();
+  }
+  $form['attachments']['slideshow']['#element_validate'][] = '_slideshow_node_form_validate';
+}
+
+function _slideshow_node_form_validate($element, &$form_state) {
+  // Test for a valid image size or for an empty value
+  if (!empty($form_state['values']['slideshow']['dimensions']) && !preg_match('~^[1-9]\d*x[1-9]\d*$~', $form_state['values']['slideshow']['dimensions'])) {
+    form_set_error('slideshow][dimensions', t('The specified slideshow image size is invalid.'));
+  }
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function slideshow_nodeapi(&$node, $op, $teaser) {
+  if (variable_get('slideshow_'. $node->type, FALSE)) {
+    // Only act if slideshow is activated for this content type
+
+    if (isset($node->slideshow)) {
+      // determine if this node's slideshow values are not default
+      $default_settings = ($node->slideshow['location'] == SLIDESHOW_LOCATION_DEFAULT && $node->slideshow['align'] == SLIDESHOW_ALIGN_DEFAULT && empty($node->slideshow['dimensions']));
+    }
+    else {
+      $default_settings = TRUE;
+    }
+
+    switch ($op) {
+      case 'delete':
+        slideshow_delete_images($node);
+        slideshow_delete_records($node);
+        break;
+      case 'delete revision':
+        slideshow_delete_revision_record($node);
+        break;
+      case 'update':
+        slideshow_update_images($node);
+        if ($node->revision && !$default_settings) {
+          slideshow_insert_record($node);
+        }
+        else {
+          slideshow_delete_revision_record($node);
+          if (!$default_settings) {
+            slideshow_insert_record($node);
+          }
+        }
+        break;
+      case 'insert':
+        slideshow_update_images($node);
+        if (!$default_settings) {
+          slideshow_insert_record($node);
+        }
+        break;
+      case 'load':
+        return slideshow_load_record($node);
+        break;
+      case 'view':
+        slideshow_view($node, $teaser);
+        break;
+    }
+  }
+}
+
+/**
+ * Add a slideshow settings record for a node revision.
+ *
+ * @param $node The node revision whose slideshow record should be added. The
+ *   slideshow property must be set.
+ */
+function slideshow_insert_record(&$node) {
+  db_query("INSERT INTO {slideshow} (nid, vid, location, align, dimensions) VALUES (%d, %d,%d, %d, '%s')", $node->nid, $node->vid, $node->slideshow['location'], $node->slideshow['align'], $node->slideshow['dimensions']);
+}
+
+/**
+ * Load a slideshow settings record for a node.
+ *
+ * @param $node The node revision whose slideshow record should be loaded.
+ * @return The slideshow settings for the node. If no record is available, the
+ *   default values are returned.
+ */
+function slideshow_load_record(&$node) {
+  $result = db_fetch_array(db_query("SELECT location, align, dimensions FROM {slideshow} WHERE nid = %d AND vid = %d;", $node->nid, $node->vid));
+
+  if (empty($result)) {
+    $result = array(
+      'location' => SLIDESHOW_LOCATION_DEFAULT,
+      'align' => SLIDESHOW_ALIGN_DEFAULT,
+      'dimensions' => '',
+    );
+  }
+
+  return array('slideshow' => $result);
+}
+
+/**
+ * Delete a slideshow settings record for a node revision.
+ *
+ * @param $node The node revision whose slideshow record should be deleted.
+ */
+function slideshow_delete_revision_record(&$node) {
+  db_query("DELETE FROM {slideshow} WHERE nid = %d AND vid = %d;", $node->nid, $node->vid);
+}
+
+/**
+ * Delete all slideshow settings record for a node.
+ *
+ * @param $node The node whose slideshow records should be deleted.
+ */
+function slideshow_delete_records(&$node) {
+  db_query("DELETE FROM {slideshow} WHERE nid = %d;", $node->nid);
+}
+
+/**
+ * Delete all slideshow images associated with the node.
+ *
+ * @param $node The node whose slideshow images should be deleted.
+ */
+function slideshow_delete_images(&$node) {
+  if ($node->files) {
+    $path = slideshow_image_directory();
+
+    foreach ($node->files as $file) {
+      file_delete($path .'/'. basename($file->filepath));
+    }
+  }
+}
+
+/**
+ * Update the slideshow images for a node. Old images will be deleted and new ones
+ * will be added. If the dimensions change, images are recalculated.
+ *
+ * @param $node The node whose slideshow images should be updated.
+ */
+function slideshow_update_images(&$node) {
+  $path = slideshow_image_directory();
+
+  // Get the image dimensions for this node (or the default dimensions if there are none).
+  $dimensions = !empty($node->slideshow['dimensions']) ? $node->slideshow['dimensions'] : variable_get('slideshow_default_dimensions', SLIDESHOW_DEFAULT_DIMENSIONS);
+
+  // Check if the previous revision contains files that this revision doesn't
+  if ($node->revision) {
+    // List all files for this node (regardless of their revision)
+    $result = db_query("SELECT fid, filename, filemime FROM {files} WHERE nid = %d", $node->nid);
+
+    // Loop through all the files this node has in any revision
+    while ($file = db_fetch_object($result)) {
+      // Don't treat non-image files
+      if (strpos($file->filemime, 'image/') !== 0) continue;
+      $image = $path .'/'. $file->filename;
+
+      // When the file is not present in the current revision, simply delete it
+      if (!isset($node->files[$file->fid])) {
+        file_delete($image);
+      }
+    }
+  }
+
+  // create all images in the currently active revision
+  if (!empty($node->files)) {
+    // Determine if the file size has to be changed
+    $result = db_fetch_array(db_query_range("SELECT dimensions FROM {slideshow} WHERE nid = %d ORDER BY vid DESC", array($node->nid), 0, 1));
+    $recreate = !(($result && $result['dimensions'] == $dimensions) || (!$result && empty($node->slideshow['dimensions'])));
+
+    $dimensions = explode('x', $dimensions, 2);
+
+    // Loop through all files
+    foreach ($node->files as $file) {
+      $file = (object) $file;
+      // Don't treat non-image files
+      if (strpos($file->filemime, 'image/') !== 0) continue;
+
+      // Create the slideshow image path
+      $destination = $path .'/'. basename($file->filepath);
+
+      // Remove the file if it is completely removed or recreated
+      if ($file->remove || $recreate) {
+        file_delete($destination);
+      }
+
+      // If the file is not removed and the file doesn't exist or should be recreated
+      if (!$file->remove && (!is_file($destination) || $recreate)) {
+        slideshow_create_image($file->filepath, $destination, $dimensions[0], $dimensions[1]);
+      }
+    }
+  }
+}
+
+/**
+ * Create an image with the given parameters. If the image can't be scaled,
+ * try to copy it (e.g. if the destination image size is larger than the actual file).
+ *
+ * @param $source The path to the source image.
+ * @param $destination The destination path.
+ * @param $width The new width.
+ * @param $height The new height.
+ */
+function slideshow_create_image($source, $destination, $width, $height) {
+  if (!image_scale($source, $destination, $width, $height)) {
+    if (!file_copy($source, $destination, FILE_EXISTS_ERROR)) {
+      drupal_set_message(t('The file %file could not be created.', array('%file' => $destination)));
+    }
+  }
+}
+
+/**
+ * Implementation of hook_file_download().
+ */
+function slideshow_file_download($file) {
+  // Map the slideshow scaled image back to the original uploaded image.
+  $path = variable_get('slideshow_image_path', SLIDESHOW_DEFAULT_IMAGE_PATH);
+  return module_invoke('upload', 'file_download', preg_replace("/^$path\//", '', $file));
+}
+
+/**
+ * Implementation of hook_elements().
+ */
+function slideshow_elements() {
+  $types['slideshow'] = array();
+
+  return $types;
+}
+
+/**
+ * Add the slideshow to the node.
+ *
+ * @param $node The node the slideshow should be displayed for.
+ */
+function slideshow_view(&$node, $teaser = FALSE) {
+  $location = $node->slideshow['location'];
+  if ($location == SLIDESHOW_LOCATION_DEFAULT) {
+    $location = variable_get('slideshow_default_location', SLIDESHOW_DEFAULT_LOCATION);
+  }
+
+  // If there are no files or the slideshow is set to hidden, don't continue processing
+  if (empty($node->files) || $location == SLIDESHOW_LOCATION_NONE
+      || ($teaser && variable_get('slideshow_suppress_on_teaser', SLIDESHOW_DEFAULT_SHOW_IN_TEASER))) {
+    return;
+  }
+
+  $images = array();
+  $files = array();
+
+  // First, sort the file attachments by their type (image vs. non-image)
+  foreach ($node->files as $key => $file) {
+    if (strpos($file->filemime, 'image/') === 0) {
+      $images[] = $file;
+      $node->files[$key]->list = FALSE;
+    }
+    else {
+      $files[$key] = $file;
+    }
+  }
+
+  // If there are no images attached, don't continue processing
+  if (empty($images)) {
+    return;
+  }
+
+  // Get the base path for all slideshow images
+  $path = variable_get('slideshow_image_path', SLIDESHOW_DEFAULT_IMAGE_PATH);
+
+  // Construct the settings array
+  $settings = array(
+    'images' => array(),
+    'total' => count($images),
+    'current' => 0,
+    'link' => url('node/'. $node->nid, array('query' => 'slide=$slideshow$')),
+  );
+
+  if (isset($_GET['slide'])) {
+    $current = (int)$_GET['slide'];
+    $settings['current'] = ($current < 1 || $current > $settings['total']) ? 0 : $current - 1;
+  }
+
+  foreach ($images as $key => $image) {
+    $settings['images'][$key] = array(
+      'src' => file_create_url($path .'/'. basename($image->filepath)),
+      'title' => check_plain($image->description),
+    );
+  }
+
+  // Construct the base slideshow element
+  $slideshow = array(
+    '#type' => 'slideshow',
+    '#attributes' => array('class' => 'slideshow', 'id' => 'slideshow-'. $node->nid),
+    '#slideshow' => array(
+      'settings' => array('slideshow-'. $node->nid => $settings),
+      'status' => array(
+        'current' => $settings['current'] + 1,
+        'total' => $settings['total'],
+        'previous' => $settings['current'] <= 0 ? $settings['total'] : $settings['current'],
+        'next' => $settings['current'] >= $settings['total'] - 1 ? 1 : $settings['current'] + 2,
+      ),
+      'url' => 'node/'. $node->nid,
+      'title' => $settings['images'][$settings['current']]['title'],
+      'image' => $settings['images'][$settings['current']]['src'],
+    ),
+    '#weight' => 0,
+  );
+
+  $align = $node->slideshow['align'];
+  if ($align == SLIDESHOW_ALIGN_DEFAULT) {
+    $align = variable_get('slideshow_default_align', SLIDESHOW_DEFAULT_ALIGN);
+  }
+
+  switch ($align) {
+    case SLIDESHOW_ALIGN_LEFT:
+      $slideshow['#attributes']['class'] .= ' align-left';
+      break;
+    case SLIDESHOW_ALIGN_RIGHT:
+      $slideshow['#attributes']['class'] .= ' align-right';
+      break;
+    case SLIDESHOW_ALIGN_FULL:
+    default:
+      $slideshow['#attributes']['class'] .= ' align-full';
+  }
+
+  // Determine if the tag location is valid, otherwise set it to the default location
+  if ($location == SLIDESHOW_LOCATION_TAG &&
+       (!isset($node->content['body']) ||
+       empty($node->content['body']['#value']) ||
+       strpos($node->content['body']['#value'], '[slideshow]') === FALSE)) {
+    $location = SLIDESHOW_LOCATION_ABOVE; // the variable could contain SLIDESHOW_LOCATION_TAG
+  }
+
+  // Figure out where to insert the slideshow
+  switch ($location) {
+    case SLIDESHOW_LOCATION_BELOW:
+      $slideshow['#weight'] = 5;
+      $slideshow['#attributes']['class'] .= ' location-below';
+      $node->content['slideshow'] = $slideshow;
+      break;
+    case SLIDESHOW_LOCATION_TAG:
+      $body = explode('[slideshow]', $node->content['body']['#value']);
+      unset($node->content['body']['#value']);
+      $slideshow['#attributes']['class'] .= ' location-tag';
+      $node->content['body']['above'] = array('#value' => array_shift($body), '#weight' => -5);
+      $node->content['body']['slideshow'] = $slideshow;
+      $node->content['body']['below'] = array('#value' => implode('', $body), '#weight' => 5);
+      break;
+    case SLIDESHOW_LOCATION_ABOVE:
+    default:
+      $slideshow['#weight'] = -5;
+      $slideshow['#attributes']['class'] .= ' location-above';
+      $node->content['slideshow'] = $slideshow;
+  }
+
+  // If the attachment listing is present, overwrite or remove it
+  if (isset($node->content['files'])) {
+    if (!empty($files)) {
+      // Regenerate the attachment listing with the actual (non-image) files
+      $node->content['files'] = array(
+        '#value' => theme('upload_attachments', $files),
+        '#weight' => 50,
+      );
+    }
+    else {
+      // No regular files are present in this node
+      unset($node->content['files']);
+    }
+  }
+}
+
+/**
+ * Render the slideshow belonging to a certain node.
+ *
+ * @param $node
+ *   The node the slideshow should be displayed for or its node ID.
+ */
+function slideshow_render($node) {
+  if (is_numeric($node)) {
+    $node = node_load($node);
+  }
+  if (!isset($node->content['slideshow'])) {
+    slideshow_view($node);
+  }
+  if (isset($node->content['slideshow']['#printed'])) {
+    unset($node->content['slideshow']['#printed']);
+  }
+
+  return drupal_render($node->content['slideshow']);
+}
+
+function theme_slideshow($element) {
+  $slideshow = $element['#slideshow'];
+  $status = $element['#slideshow']['status'];
+
+  drupal_add_js(drupal_get_path('module', 'slideshow') .'/slideshow.js');
+  drupal_add_css(drupal_get_path('module', 'slideshow') .'/slideshow.css');
+  drupal_add_js(array('slideshow' => $slideshow['settings']), 'setting');
+
+  $output = (isset($element['#prefix']) ? $element['#prefix'] : '') .'<div'. drupal_attributes($element['#attributes']) .'>';
+
+  if ($status['total'] > 1) {
+    $output .= '<div class="header">';
+    $output .=   l(t('Previous'), $slideshow['url'], array('attributes' => array('class' => 'previous'), 'query' => 'slide='. $status['previous'])) .' | ';
+    $output .=   t('Image !current of !total', array('!current' => '<span class="current">'. $status['current'] .'</span>', '!total' => '<span class="total">'. $status['total'] .'</span>')) .' | ';
+    $output .=   l(t('Next'), $slideshow['url'], array('attributes' => array('class' => 'next'), 'query' => 'slide='. $status['next']));
+    $output .= '</div>';
+  }
+
+  $output .= '<img class="image" src="'. $slideshow['image'] .'" />';
+  $output .= '<span class="title">'. check_plain($slideshow['title']) .'</span>';
+  $output .= '</div>'. (isset($element['#suffix']) ? $element['#suffix'] : '');
+
+  return $output;
+}
